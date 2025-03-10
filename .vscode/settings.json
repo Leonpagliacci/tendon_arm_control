@@ -1,0 +1,20 @@
+{
+    "cmake.configureOnOpen": false,
+    "files.associations": {
+        "cmath": "cpp",
+        "iosfwd": "cpp",
+        "tuple": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "random": "cpp",
+        "*.tcc": "cpp",
+        "unordered_map": "cpp",
+        "fstream": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "streambuf": "cpp",
+        "functional": "cpp",
+        "iostream": "cpp"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/include/spdlog",
+                "/usr/include/eigen3/", 
+                "/usr/local/include/opencv",
+                "${workspaceFolder}/../modules/rtsetup",
+                "${workspaceFolder}/../modules/SocketCAN",
+                "${workspaceFolder}/../modules/imu_tl_v3"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
