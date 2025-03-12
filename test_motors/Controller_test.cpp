@@ -126,6 +126,9 @@ void *Motors_thread_func(void *data)
     OutFileAngle.close();
     /* stop all motors */
     Gyems_manager->pack_torque_cmd(1,0);
+    Gyems_manager->pack_torque_cmd(2,0);
+    Gyems_manager->pack_torque_cmd(3,0);
+    Gyems_manager->pack_torque_cmd(4,0);
     console_logger->info("the threat has ended" );
     sleep(1);   
     return NULL;

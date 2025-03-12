@@ -15,6 +15,7 @@
         "ostream": "cpp",
         "streambuf": "cpp",
         "functional": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "complex": "cpp"
     }
 }
