@@ -23,7 +23,7 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/../modules/SocketCAN socketcan)
 
 # main function
 # add_executable(main main.cpp Wheel_test.cpp Wheel_controller.cpp SEA_test.cpp SEA_controller.cpp)
-add_executable(main main.cpp Controller_test.cpp)
+add_executable(main main.cpp)
 
 # link libraries to compile
 target_link_libraries(main PUBLIC 

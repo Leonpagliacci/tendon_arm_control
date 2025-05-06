@@ -44,7 +44,7 @@ extern "C" {
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 // Task functions
-#include "Controller_test.hpp"
+// #include "Controller_test.hpp"
 
 
 #define LOG_Q_SZ 131072
@@ -76,47 +76,12 @@ void sigint_handler(int dummy){
 int main(int argc, char* argv[])
 {
 
-    clock_gettime(CLOCK_MONOTONIC, &t_program_start);  // time this program starts
-
     int ret;
 
     // Catch a Ctrl-C event.
     signal(SIGINT, sigint_handler);
     //Catch segfaults
     signal(SIGSEGV, segfault_handler);
-    
-
-    /****************************** SETUP SHARED RESOURCES ******************************/
-    
-    // Setup a console logger for general logging.
-    auto console_logger = spdlog::stdout_color_mt("console");
-    auto CONSOLE_LOGGER_LEVEL = spdlog::level::debug;
-    auto FILE_LOGGER_LEVEL = spdlog::level::trace;  
-
-    // Async logger for logging to file. 
-    // Initialize logging, Setup logging file, Set thread pool
-    spdlog::init_thread_pool(LOG_Q_SZ, 1);
-    time_t tstart = time(0);
-    tm *t0 = localtime(&tstart);
-    char log_name[50];
-    // sprintf(log_name, "../data_log/data_%04d%02d%02d_%02d%02d%02d.txt", \
-	// 	t0->tm_year+1900,t0->tm_mon+1,t0->tm_mday,\
-	// 	t0->tm_hour,t0->tm_min,t0->tm_sec);
-    auto async_logger = spdlog::create_async_nb<spdlog::sinks::basic_file_sink_mt>("async_file_logger", log_name);
-    async_logger->set_level(spdlog::level::trace);
-    async_logger->set_pattern("[%H:%M:%S:%f] [%t:%l] {%v}"); // Set logger formatting
-
-    pthread_cond_t cond,cond2; //for signaling between threads 
-    pthread_mutex_t mux;        //for locking threads
-
-    if (ret = pthread_mutex_init(&mux, 0)){
-        handle_error_en(ret, "pthread_mutex_init");        
-    }if (ret = pthread_cond_init(&cond, 0)){
-        handle_error_en(ret, "pthread_cond_init");        
-    }if (ret = pthread_cond_init(&cond2, 0)){
-        handle_error_en(ret, "pthread_cond_init");        
-    }
-
 
     // Gyem motor is in can0
     CANDevice can0("can0"); 
@@ -129,98 +94,56 @@ int main(int argc, char* argv[])
     GyemsManager gyems(Gyem_Array,can0); 
     gyems.begin();
     
+    double reference_angular_pos[4] = {0,0,0,0};
+    GyemsManager* Gyems_manager = &gyems;
+
+    /* gyems motor initialization */
+    Gyems * gyems_1;
+    Gyems * gyems_2;
+    Gyems * gyems_3;
+    Gyems * gyems_4;
     
-    struct argPtr_motors t1_arg;
-    struct argPtr_sensor t3_arg;
-
-    // reserved for future motors thread这取决于线程函数的入参
-    t1_arg.arg_gyems = &gyems;
-    t1_arg.arg_mutex = &mux;
-    t1_arg.arg_condition = &cond;
-    t1_arg.arg_condition_2 = &cond2;
-
-
-    t3_arg.arg_mutex = &mux;
-    t3_arg.arg_condition = &cond;
-    t3_arg.arg_condition_2 = &cond2;
-
-    /****************************** SETUP SHARED RESOURCES (END) ******************************/
-
-    /****************************** SETUP THREAD ATTRIBUTES ******************************/
-    setup_memory(); //这一句要sudo 才能运行
-    t1_attr = set_attr(RT_PRIO_MOTOR); // 分配这个任务的优先级
-    t2_attr = set_attr(72);
-    t3_attr = set_attr(RT_PRIO_SENSOR);
-
-
-    // changing the stack size based task requirements 我这个应该暂时不需要，如果报了错再说. 
-    // default is 16KB, usually not enough and causes "Segmentation fault (core dumped)"
-    size_t stack_sz; 
+    gyems_1 = Gyems_manager->getmotor(1); //received_node_id the can_ID set by the Gyems software
+    gyems_2 = Gyems_manager->getmotor(2); //received_node_id the can_ID set by the Gyems software
+    gyems_3 = Gyems_manager->getmotor(3); //received_node_id the can_ID set by the Gyems software
+    gyems_4 = Gyems_manager->getmotor(4); //received_node_id the can_ID set by the Gyems software
     
-    pthread_attr_getstacksize(&t1_attr, &stack_sz);
-    console_logger->info("t1_attr original stack size {}", stack_sz);
-    stack_sz = 1024*1024*50; 
-    pthread_attr_setstacksize(&t1_attr, stack_sz);
-    pthread_attr_getstacksize(&t1_attr, &stack_sz);
-    console_logger->info("t1_attr new stack size {}", stack_sz);
+    Gyems_manager->load_periodic_request(0x92, 0);
+    //get initial position reading from motor
+    Gyems_manager->request_values(500); 
+    usleep(1000);
+    Gyems_manager->read_values(); 
+    Gyems_manager->request_values(500);
+    usleep(1000);
+    Gyems_manager->read_values(); 
 
-    pthread_attr_getstacksize(&t2_attr, &stack_sz);
-    console_logger->info("t2_attr original stack size {}", stack_sz);
-    stack_sz = 1024*1024*5;
-    pthread_attr_setstacksize(&t2_attr, stack_sz);
-    pthread_attr_getstacksize(&t2_attr, &stack_sz);
-    console_logger->info("t2_attr new stack size {}", stack_sz);
+    /*********************** Incremental mode can not be accumulated with in the loop ***********************/
+    reference_angular_pos[0] = static_cast<int>(72000.0f);
+    reference_angular_pos[1] = static_cast<int>(72000.0f);
+    reference_angular_pos[2] = static_cast<int>(72000.0f);
+    reference_angular_pos[3] = static_cast<int>(72000.0f);
 
-    pthread_attr_getstacksize(&t3_attr, &stack_sz);
-    console_logger->info("t3_attr original stack size {}", stack_sz);
-    stack_sz = 1024*1024*5;
-    pthread_attr_setstacksize(&t3_attr, stack_sz);
-    pthread_attr_getstacksize(&t3_attr, &stack_sz);
-    console_logger->info("t3_attr new stack size {}", stack_sz);
-    /****************************** SETUP THREAD ATTRIBUTES (END) ******************************/
-    
+    Gyems_manager->pack_position_6_cmd(1, reference_angular_pos[0],360);  // (can node ID, incremental angle in 0.01 degree, max speed in degree/sec)
+    Gyems_manager->pack_position_6_cmd(2, reference_angular_pos[1],180);  
+    Gyems_manager->pack_position_6_cmd(3, reference_angular_pos[2],180);  
+    Gyems_manager->pack_position_6_cmd(4, reference_angular_pos[3],180);  
 
+    while(run_flag){
+        /*********************** loop runs in 500Hz ***********************/
 
-    /*************** Restrict threads to specific CPU cores      **********************/
-    /* this leads to corrupt images. not sure why, better not to use for vision.*/
-    // cpu_set_t cpu0, cpu1;
-    // CPU_ZERO(&cpu0);
-    // CPU_SET(0, &cpu0);
-    // pthread_attr_setaffinity_np(&t1_attr, sizeof(cpu_set_t), &cpu0);
-    // CPU_ZERO(&cpu1);
-    // CPU_SET(1, &cpu1);
-    // pthread_attr_setaffinity_np(&t2_attr, sizeof(cpu_set_t), &cpu1);  
-    
-    /*************** Restrict threads to specific CPU cores (END)     **********************/
-    
+        // Gyems_manager->request_values(100);
+        // usleep(100);
+        // Gyems_manager->read_values(); 
 
+        printf("the reference angular position is %d\n",(reference_angular_pos));
 
-    /* Create a pthread with specified attributes */
-    ret = pthread_create(&thread1, &t1_attr,Motors_thread_func , &t1_arg);
-    if (ret){
-        handle_error_en(ret, "pthread1_create");        
     }
-    usleep(1000);   
-
-    /* Create a pthread with specified attributes */
-    ret = pthread_create(&thread3, &t3_attr,sensor_thread_func, &t3_arg);
-    if (ret){
-        handle_error_en(ret, "pthread3_create"); 
-    }
-
-
-    /* Join the thread and wait until it is done */
-    ret = pthread_join(thread1, NULL);
-    if (ret){
-        handle_error_en(ret, "pthread1_join");
-    }
-
-    /* Join the thread and wait until it is done */
-    ret = pthread_join(thread3, NULL);
-    if (ret){
-        handle_error_en(ret, "pthread3_join");
-    }
-
-    spdlog::drop_all();
+    /************************** END OF RT STUFF **************************/
+    /* stop all motors */
+    Gyems_manager->pack_torque_cmd(1,0);
+    Gyems_manager->pack_torque_cmd(2,0);
+    Gyems_manager->pack_torque_cmd(3,0);
+    Gyems_manager->pack_torque_cmd(4,0);
+    sleep(1);   
     return ret;
 }
