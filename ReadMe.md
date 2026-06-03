@@ -1,25 +1,48 @@
-# Readme
-This is the Gyems driver using linux socket can
+# README
 
-# step of use :
-1. initialize socket can devices: direct to tendon_arm_control folder, excute "sudo ./can_init.sh", use "ifconfig" to check if CAN0 is avaliable;
-2. change the code as you want, do not have to modify main.cpp unless motors are not in CAN0. Change the code in  Controller_test.cpp, i.e pack_position_6_cmd(can node ID, incremental angle in 0.01 degree, max speed in degree/sec) and move your motors to anywhere you want!
-3. compile the project: go to test_motors/,excute "mkdir build", go into build/ and excute "cmake .." (all Cmake file is fairly configured), the "make";
-4. run the code. in build/ run "sudo ./main". press ctrl+C to stop the motors.
+This repository contains the Gyems motor driver using Linux SocketCAN for controlling the tendon‑driven robotic arm described in the cover article of Nature.
 
-## Folder description:
-- modules: is the folder of many libraries can be called by projects
-- test**: are folders of projects, may have different versions.
+Xue, Y., Cao, J., Feng, T. et al. Slipknot‑gauged mechanical transmission and robotic operation. Nature 647, 889–896 (2025). https://doi.org/10.1038/s41586-025-09673-w
 
-## why this 
-This setup allows different version of the same module. 
-The projects are independent as well. 
+<p align="center">
+  <img src="d73aac812a710ca9b094b048a34c5cfe.jpg" width="400" alt="Cover image" />
+</p>
 
-Each project has an independent cmakeList file to set up the libraries needed.
+## Usage
 
-## Project descriptions:
+1. Initialize the SocketCAN interface:
+   - Open a terminal in the project folder and run:
+     sudo ./can_init.sh
+   - Verify the interface with:
+     ifconfig
+   - Confirm that `can0` is available.
 
+2. Modify control code as needed:
+   - You generally do not need to change `main.cpp` unless your motors are not on `can0`.
+   - Edit `Controller_test.cpp` to issue motor commands. For example, use:
+     pack_position_6_cmd(can_node_ID, incremental_angle_in_0.01_deg, max_speed_deg_per_sec)
+   - Use this to move motors to desired positions.
 
+3. Build the project:
+   - Go to the `test_motors/` folder and create a build directory:
+     mkdir build
+     cd build
+     cmake ..
+     make
 
-# notes:
-- using RT thread requires sudo command to excute program.
+4. Run:
+   - From the build directory run:
+     sudo ./main
+   - Press Ctrl+C to stop motors.
+
+## Folder structure
+
+- modules: libraries used by projects
+- test*: project folders that may contain different versions
+
+Each project has an independent CMakeLists.txt and can be built separately. This structure allows multiple versions of the same module and independent projects.
+
+## Notes
+
+- Running with real‑time threads or accessing CAN devices may require `sudo`.
+- Ensure you understand motor and safety procedures before operating the hardware.
