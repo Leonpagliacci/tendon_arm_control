@@ -4,9 +4,16 @@ This repository contains the Gyems motor driver using Linux SocketCAN for contro
 
 Xue, Y., Cao, J., Feng, T. et al. Slipknot‑gauged mechanical transmission and robotic operation. Nature 647, 889–896 (2025). https://doi.org/10.1038/s41586-025-09673-w
 
-<p align="center">
-  <img src="d73aac812a710ca9b094b048a34c5cfe.jpg" width="400" alt="Cover image" />
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="d73aac812a710ca9b094b048a34c5cfe.jpg" width="400" alt="Cover image" /></td>
+    <td align="center"><img src="image.png" width="400" alt="Tendon driven robotic arm" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Cover image</b></td>
+    <td align="center"><b>Tendon driven robotic arm</b></td>
+  </tr>
+</table>
 
 ## Usage
 
